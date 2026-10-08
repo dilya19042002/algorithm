@@ -4,7 +4,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# CORS 설정: 웹 브라우저 cross-origin 요청 허용
+# CORS 설정 (모든 cross-origin 요청 허용)
 CORS(app)
 
 def binary_search_trace(arr, target):
@@ -54,7 +54,7 @@ def search():
     if not isinstance(arr, list):
         return jsonify({"error": "'array'는 배열 형태여야 합니다."}), 400
 
-    # 이진 검색을 위한 정렬
+    # 이진 검색을 위한 사전 정렬
     arr_sorted = sorted(arr)
     
     # 단계별 추적 실행
@@ -67,7 +67,7 @@ def search():
         "found": found_index != -1,
         "final_index": found_index,
         "total_steps": len(steps),
-        "steps": steps,  # 시각화용 핵심 데이터
+        "steps": steps,  # 시각화를 위한 필수 필드
         "time_complexity": {
             "best": "O(1)",
             "average": "O(log N)",
