@@ -4,24 +4,42 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# CORS 설정: 모든 도메인에서의 요청을 허용합니다.
-# 특정 도메인만 허용하려면 CORS(app, resources={r"/*": {"origins": "https://yourdomain.com"}}) 형태로 수정하세요.
+# CORS 설정: 웹 브라우저 cross-origin 요청 허용
 CORS(app)
 
-def binary_search(arr, target):
-    """정렬된 리스트(arr)에서 target의 인덱스를 반환하는 이진 검색 함수"""
+def binary_search_trace(arr, target):
+    """
+    이진 검색 수행 과정을 단계별(Left, Right, Mid 지점 및 상태)로 추적하는 함수
+    """
     left, right = 0, len(arr) - 1
+    steps = []
     
     while left <= right:
         mid = (left + right) // 2
+        
+        # 현재 단계 정보 기록
+        step_info = {
+            "left": left,
+            "right": right,
+            "mid": mid,
+            "mid_val": arr[mid],
+            "status": "comparing"
+        }
+        
         if arr[mid] == target:
-            return mid
+            step_info["status"] = "found"
+            steps.append(step_info)
+            return steps, mid
         elif arr[mid] < target:
+            step_info["status"] = "go_right"
+            steps.append(step_info)
             left = mid + 1
         else:
+            step_info["status"] = "go_left"
+            steps.append(step_info)
             right = mid - 1
             
-    return -1
+    return steps, -1
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -36,18 +54,26 @@ def search():
     if not isinstance(arr, list):
         return jsonify({"error": "'array'는 배열 형태여야 합니다."}), 400
 
-    # 이진 검색은 정렬된 배열을 전제로 합니다.
-    # 배열이 정렬되어 있는지 확인하거나 미리 정렬합니다.
+    # 이진 검색을 위한 정렬
     arr_sorted = sorted(arr)
     
-    result_index = binary_search(arr_sorted, target)
+    # 단계별 추적 실행
+    steps, found_index = binary_search_trace(arr_sorted, target)
     
     return jsonify({
         "original_array": arr,
         "sorted_array": arr_sorted,
         "target": target,
-        "found": result_index != -1,
-        "index_in_sorted": result_index
+        "found": found_index != -1,
+        "final_index": found_index,
+        "total_steps": len(steps),
+        "steps": steps,  # 시각화용 핵심 데이터
+        "time_complexity": {
+            "best": "O(1)",
+            "average": "O(log N)",
+            "worst": "O(log N)"
+        },
+        "space_complexity": "O(1)"
     }), 200
 
 @app.route('/', methods=['GET'])
@@ -55,6 +81,5 @@ def health_check():
     return jsonify({"status": "healthy"}), 200
 
 if __name__ == "__main__":
-    # Cloud Run은 PORT 환경 변수를 주입합니다. (기본값: 8080)
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
